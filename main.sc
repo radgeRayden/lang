@@ -19,6 +19,8 @@ using import String
 using import Array
 using import struct
 using import Rc
+using import Option
+using import Map
 
 let C = (import .radlib.libc)
 
@@ -156,18 +158,12 @@ fn tokenize (source filename)
         idx + 1
 
 enum LangValue
-    Function
-    String
-    Number
+    Identifier : String
+    String : String
 
 struct ASTNode
-    value : LangValue
-
-enum ParserState plain
-    StatementEnd # doubles as initial state
-    SeenIdentifier
-
-run-stage;
+    head : LangValue
+    args : (Option (Array this-type))
 
 inline LangAnchor->Anchor (anc)
     sc_anchor_new
@@ -186,34 +182,84 @@ do
             "unexpected token"
     locals;
 
-fn parse (tokens)
-    local root : (Array ASTNode)
+enum ParserState plain
+    NewStatement
+    SeenIdentifier
+    FunctionArgument
 
-    fold (pstate = ParserState.StatementEnd) for tk in tokens
-        using ParserState
-        switch pstate
-        case StatementEnd
-            # expects: identifier
-            if (not (tag== tk.kind TokenKind.Identifier))
-                ParsingError.UnexpectedToken tk.anchor
-            ParserState.SeenIdentifier
-        case SeenIdentifier
-            # expects: open parens, operator
-            dispatch tk.kind
-            case OpenParens ()
-                pstate
-            default
-                ParsingError.UnexpectedToken tk.anchor
-        default
-            if (tag== tk.kind TokenKind.StatementEnd)
-                ParserState.StatementEnd
-            else
-                pstate
+run-stage;
+
+# fn parse (tokens)
+#     local AST : (Array ASTNode)
+
+#     # let's start by only parsing hello world programs
+#     loop (idx pstate = 0 ParserState.NewStatement)
+#         if (idx >= (countof tokens))
+#             break (deref root)
+#         let tk = (tokens @ idx)
+#         let tkind = tk.kind
+
+#         using ParserState
+
+#         vvv bind next-state
+#         switch pstate
+#         case NewStatement
+#             # expects: identifier
+#             if (not (tag== tkind TokenKind.Identifier))
+#                 ParsingError.UnexpectedToken tk.anchor
+#             ParserState.SeenIdentifier
+#         case SeenIdentifier
+#             # expects: open parens
+#             dispatch tk.kind
+#             case OpenParens ()
+#                 ParserState.FunctionArgument
+#             default
+#                 ParsingError.UnexpectedToken tk.anchor
+#         # case FunctionArgument
+#         #     # expects: string literal
+#         #     if (tag== tkind TokenKind.OpenParens)
+
+#         #     else
+#         #         ParsingError.UnexpectedToken tk.anchor
+
+#         default
+#             pstate
+
+        _ (idx + 1) next-state
+
+enum OpCode
+    # call function at the top of stack with `argc` arguments starting at index 1
+    CALL : (argc = u8)
+    # push value from constant value table onto the stack
+    PUSH : (address = usize)
+    # push value stored at stack position `index` onto the stack
+    PUSHI : (index = u8)
+    # pop value from stack and store at target
+    POP : (target = u8)
+    # pop `argc` values from the stack and discard them
+    DISCARD : (argc = u8)
+
+struct Bytecode
+    known-symbols : (Map hash rawstring)
 
 fn encode (AST)
-    ;
+    if (not AST.args)
+    none
+
+vvv bind lang-globals
+do
+    let print =
+        static-typify
+            fn print (str)
+                C.stdio.printf "%s\n" str
+            rawstring
+    locals;
 
 fn execute (bytecode)
+    local stack : (Array LangValue)
+    for opcode in bytecode.code
+        dispatch opcode
+        case CALL (index)
     ;
 
 fn read-source (filename)
@@ -235,7 +281,33 @@ do
     assert (argc > 0) "expected source file"
     let input = (String (argv @ 0) (C.string.strlen (argv @ 0)))
     let source = (read-source input)
-    let tokens = (tokenize source input)
-    let AST = (parse tokens)
-    let bytecode = (encode AST)
+
+    # let AST = (parse tokens)
+    let AST =
+        do
+            local ast : (Array ASTNode)
+            local leaves : (Array ASTNode)
+            'append leaves
+                ASTNode
+                    LangValue.String "Jello World!"
+            'append ast
+                ASTNode
+                    LangValue.Identifier "print"
+                    deref leaves
+            deref ast
+
+    # let bytecode = (encode AST)
+    local const-values : (Array LangValue)
+    'append const-values (LangValue.String "Jello World!")
+    'append const-values (LangValue.String "print")
+    local bytecode : Bytecode
+    'append bytecode.code
+        # push on stack
+        OpCode.PUSH 0 # jello world
+    'append bytecode.code
+        # push indirect (looks up symbol)
+        OpCode.PUSHI 1 # print
+    'append bytecode.code
+        # calls callable value at stack index 0 with 1 argument
+        OpCode.CALL 1
     execute bytecode
