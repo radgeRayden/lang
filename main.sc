@@ -291,21 +291,6 @@ do
     let input = (String (argv @ 0) (C.string.strlen (argv @ 0)))
     let source = (read-source input)
 
-    # let AST = (parse tokens)
-    let AST =
-        do
-            local ast : (Array ASTNode)
-            local leaves : (Array ASTNode)
-            'append leaves
-                ASTNode
-                    LangValue.String "Jello World!"
-            'append ast
-                ASTNode
-                    LangValue.Identifier "print"
-                    deref leaves
-            deref ast
-
-    # let bytecode = (encode AST)
     local const-values : (Array LangValue)
     'append const-values (LangValue.String "Jello World!")
     'append const-values (LangValue.String "print")
