@@ -189,47 +189,13 @@ enum ParserState plain
 
 run-stage;
 
-# fn parse (tokens)
-#     local AST : (Array ASTNode)
-
-#     # let's start by only parsing hello world programs
-#     loop (idx pstate = 0 ParserState.NewStatement)
-#         if (idx >= (countof tokens))
-#             break (deref root)
-#         let tk = (tokens @ idx)
-#         let tkind = tk.kind
-
-#         using ParserState
-
-#         vvv bind next-state
-#         switch pstate
-#         case NewStatement
-#             # expects: identifier
-#             if (not (tag== tkind TokenKind.Identifier))
-#                 ParsingError.UnexpectedToken tk.anchor
-#             ParserState.SeenIdentifier
-#         case SeenIdentifier
-#             # expects: open parens
-#             dispatch tk.kind
-#             case OpenParens ()
-#                 ParserState.FunctionArgument
-#             default
-#                 ParsingError.UnexpectedToken tk.anchor
-#         # case FunctionArgument
-#         #     # expects: string literal
-#         #     if (tag== tkind TokenKind.OpenParens)
-
-#         #     else
-#         #         ParsingError.UnexpectedToken tk.anchor
-
-#         default
-#             pstate
-
-        _ (idx + 1) next-state
-
 enum OpCode
     # call function at the top of stack with `argc` arguments starting at index 1
     CALL : (argc = u8)
+    # jump back to address after call
+    RETURN
+    # call registered C function
+    CCALL : (argc = u8)
     # push value from constant value table onto the stack
     PUSH : (address = usize)
     # push value stored at stack position `index` onto the stack
@@ -239,27 +205,70 @@ enum OpCode
     # pop `argc` values from the stack and discard them
     DISCARD : (argc = u8)
 
-struct Bytecode
+let CWrapper =
+    typeof
+        static-typify
+            fn (argc args)
+                ((Array LangValue))
+            u32
+            mutable@ LangValue
+
+struct Program
     known-symbols : (Map hash rawstring)
+    registered-cfns : (Map String CWrapper)
+    const-table : (Array LangValue)
+    code : (Array OpCode)
 
 fn encode (AST)
     if (not AST.args)
     none
 
-vvv bind lang-globals
-do
-    let print =
-        static-typify
-            fn print (str)
-                C.stdio.printf "%s\n" str
-            rawstring
-    locals;
-
-fn execute (bytecode)
+fn execute (program)
     local stack : (Array LangValue)
-    for opcode in bytecode.code
+    inline calc-idx (idx)
+        (countof stack) - idx - 1
+    loop (idx = 0)
+        if (idx >= (countof program.code))
+            break;
+
+        opcode := program.code @ idx
+        report idx opcode
+
+        'apply opcode
+            inline (T ...)
+                print T.Name ...
+
         dispatch opcode
-        case CALL (index)
+        case CALL (argc)
+
+            let f = ('pop stack)
+            # ...
+        case CCALL (argc)
+            let name = ('pop stack)
+            assert (tag== name LangValue.String)
+            let name = ('unsafe-extract-payload name String)
+            let args = (malloc-array LangValue argc)
+            for i in (range argc)
+                args @ i = (copy ('pop stack))
+            try
+                # TODO: collect results
+                ('get program.registered-cfns name) argc (view (deref args))
+            else
+                error "unknown C function"
+            free args
+            ;
+        case PUSH (address)
+            'append stack (copy (program.const-table @ address))
+        case PUSHI (index)
+            'append stack (copy (stack @ (calc-idx index)))
+        case DISCARD (argc)
+            for i in (range argc)
+                'pop stack
+            ;
+        default
+            error "unsupported opcode"
+
+        idx + 1
     ;
 
 fn read-source (filename)
@@ -300,14 +309,25 @@ do
     local const-values : (Array LangValue)
     'append const-values (LangValue.String "Jello World!")
     'append const-values (LangValue.String "print")
-    local bytecode : Bytecode
-    'append bytecode.code
-        # push on stack
-        OpCode.PUSH 0 # jello world
-    'append bytecode.code
-        # push indirect (looks up symbol)
-        OpCode.PUSHI 1 # print
-    'append bytecode.code
-        # calls callable value at stack index 0 with 1 argument
-        OpCode.CALL 1
-    execute bytecode
+    local program : Program
+    program.const-table = const-values
+    'set program.registered-cfns (String "print")
+        imply
+            fn (argc args)
+                assert (argc == 1)
+                let msg = (args @ 0)
+                assert (tag== msg LangValue.String)
+                C.stdio.printf "%s\n" (('unsafe-extract-payload msg String) as rawstring)
+                ((Array LangValue))
+            CWrapper
+
+    local code =
+        arrayof OpCode
+            # print end
+            OpCode.PUSH 0 # jello world
+            OpCode.PUSH 1 # print
+            OpCode.CCALL 1
+            OpCode.DISCARD;
+    for op in code
+        'append program.code (copy op)
+    execute program
