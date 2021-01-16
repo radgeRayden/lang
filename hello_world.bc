@@ -1,0 +1,11 @@
+CONSTANTS {
+    "jello world",
+    "print"
+}
+
+# jello world
+PUSH 0
+# print
+PUSH 1
+# print("jello world")
+CCALL 1
