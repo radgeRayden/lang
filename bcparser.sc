@@ -12,6 +12,25 @@ inline whitespace? (c)
     default
         false
 
+inline letter? (c)
+    or
+        and
+            c >= (char "A")
+            c <= (char "Z")
+        and
+            c >= (char "a")
+            c <= (char "z")
+
+inline digit? (c)
+    and
+        c >= (char "0")
+        c <= (char "9")
+
+inline alphanum? (c)
+    or
+        letter? c
+        digit? c
+
 inline err-malformed ()
     hide-traceback;
     error "malformed input file"
@@ -54,7 +73,58 @@ fn parse (filename)
 
         switch (bitcast (hash instruction) Symbol)
         case 'CONSTANTS
-            print "constants!!"
+            while (whitespace? (source @ next-pos))
+                next-pos += 1
+
+            c := source @ next-pos
+            if (c != (char "{"))
+                err-malformed;
+
+            # parse constant list
+            next-pos += 1
+            loop (idx = (deref next-pos))
+                if (idx >= slen)
+                    err-malformed;
+
+                c := source @ idx
+                if (whitespace? c)
+                    repeat (idx + 1)
+
+                if (c == (char "}"))
+                    next-pos = idx + 1
+                    break;
+                # we expect either a string literal or a number.
+                if (c == (char "\""))
+                    local stringlit : String
+                    let stringlit-end =
+                        loop (idx = (idx + 1))
+                            if (idx >= slen)
+                                err-malformed;
+                            c := source @ idx
+                            if (c == (char "\n"))
+                                err-malformed;
+                            if (c == (char "\""))
+                                print stringlit
+                                break (idx + 1)
+                            # TODO: refactor this out, because we also need to convert escapes like \n
+                            'append stringlit c
+                            idx + 1
+
+                    repeat
+                        # consume whitespace until line ends
+                        loop (idx = stringlit-end)
+                            if (idx >= slen)
+                                err-malformed;
+                            c := source @ idx
+                            if (c == (char "\n"))
+                                break (idx + 1)
+                            if (whitespace? c)
+                                repeat (idx + 1)
+                            else
+                                err-malformed;
+                if (digit? c)
+                    # TODO: this
+                idx + 1
         case 'CALL
         case 'RETURN
         case 'CCALL
