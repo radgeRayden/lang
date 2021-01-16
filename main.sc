@@ -208,10 +208,10 @@ enum OpCode
 let CWrapper =
     typeof
         static-typify
-            fn (argc args)
+            fn (args)
+                move args
                 ((Array LangValue))
-            u32
-            mutable@ LangValue
+            (mutable (& (Array LangValue)))
 
 struct Program
     known-symbols : (Map hash rawstring)
@@ -247,15 +247,14 @@ fn execute (program)
             let name = ('pop stack)
             assert (tag== name LangValue.String)
             let name = ('unsafe-extract-payload name String)
-            let args = (malloc-array LangValue argc)
+            local args : (Array LangValue)
             for i in (range argc)
-                args @ i = (copy ('pop stack))
+                'append args (copy ('pop stack))
             try
                 # TODO: collect results
-                ('get program.registered-cfns name) argc (view (deref args))
+                ('get program.registered-cfns name) args
             else
                 error "unknown C function"
-            free args
             ;
         case PUSH (address)
             'append stack (copy (program.const-table @ address))
@@ -298,11 +297,12 @@ do
     program.const-table = const-values
     'set program.registered-cfns (String "print")
         imply
-            fn (argc args)
-                assert (argc == 1)
-                let msg = (args @ 0)
+            fn (args)
+                assert ((countof args) == 1)
+                let msg = ('pop args)
                 assert (tag== msg LangValue.String)
                 C.stdio.printf "%s\n" (('unsafe-extract-payload msg String) as rawstring)
+                move args
                 ((Array LangValue))
             CWrapper
 
