@@ -62,14 +62,11 @@ fn parse (filename)
     let source = (utils.read-file filename)
     let slen = (countof source)
     loop (idx = 0:usize)
+        let idx = (consume-whitespace source idx)
         if (idx >= slen)
             break;
 
         let c = (source @ idx)
-
-        # consume leading whitespace
-        if (whitespace? c)
-            repeat (idx + 1)
 
         # skip comment line
         if (c == (char "#"))
@@ -98,7 +95,6 @@ fn parse (filename)
             # while (whitespace? (source @ next-pos))
             #     next-pos += 1
             next-pos = (consume-whitespace source (deref next-pos))
-            print next-pos
 
             c := source @ next-pos
             if (c != (char "{"))
