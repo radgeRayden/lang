@@ -31,6 +31,29 @@ inline alphanum? (c)
         letter? c
         digit? c
 
+fn consume-whitespace (stream initpos)
+    imply initpos usize
+    loop (idx = initpos)
+        c := stream @ idx
+        if (whitespace? c)
+            repeat (idx + 1)
+        # we necessarily stop at the zero terminator at the most, in that case
+        # we want to return its position instead of the next (invalid) index.
+        break (min idx (countof stream))
+
+# like consume-whitespace, but stops after a line break.
+fn consume-whitespace-endl (stream initpos)
+    imply initpos usize
+    loop (idx = initpos)
+        c := stream @ idx
+        if (c == (char "\n"))
+            break (idx + 1)
+        if (whitespace? c)
+            repeat (idx + 1)
+        # we necessarily stop at the zero terminator at the most, in that case
+        # we want to return its position instead of the next (invalid) index.
+        break (min idx (countof stream))
+
 inline err-malformed ()
     hide-traceback;
     error "malformed input file"
@@ -61,7 +84,6 @@ fn parse (filename)
         local instruction : String
         loop ()
             let c = (source @ next-pos)
-            print (c as string)
             # capital letter?
             if ((c < 65:i8) or (c > 90:i8))
                 break;
@@ -73,8 +95,10 @@ fn parse (filename)
 
         switch (bitcast (hash instruction) Symbol)
         case 'CONSTANTS
-            while (whitespace? (source @ next-pos))
-                next-pos += 1
+            # while (whitespace? (source @ next-pos))
+            #     next-pos += 1
+            next-pos = (consume-whitespace source (deref next-pos))
+            print next-pos
 
             c := source @ next-pos
             if (c != (char "{"))
@@ -83,13 +107,11 @@ fn parse (filename)
             # parse constant list
             next-pos += 1
             loop (idx = (deref next-pos))
+                let idx = (consume-whitespace source idx)
                 if (idx >= slen)
                     err-malformed;
 
                 c := source @ idx
-                if (whitespace? c)
-                    repeat (idx + 1)
-
                 if (c == (char "}"))
                     next-pos = idx + 1
                     break;
@@ -110,18 +132,7 @@ fn parse (filename)
                             'append stringlit c
                             idx + 1
 
-                    repeat
-                        # consume whitespace until line ends
-                        loop (idx = stringlit-end)
-                            if (idx >= slen)
-                                err-malformed;
-                            c := source @ idx
-                            if (c == (char "\n"))
-                                break (idx + 1)
-                            if (whitespace? c)
-                                repeat (idx + 1)
-                            else
-                                err-malformed;
+                    repeat (consume-whitespace-endl source stringlit-end)
                 if (digit? c)
                     # TODO: this
                 idx + 1
