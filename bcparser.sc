@@ -44,6 +44,28 @@ inline alphanum? (c)
         letter? c
         digit? c
 
+inline err-malformed ()
+    hide-traceback;
+    error "malformed input file"
+
+fn consume-leading-whitespace (stream initpos)
+    initpos as:= usize
+    for idx c in (string-slice stream initpos)
+        if (c == (char "\n"))
+            error "expected something before endl"
+        if (not (whitespace? c))
+            return idx
+    error "expected something before EOF"
+
+fn consume-trailing-whitespace (stream initpos)
+    initpos as:= usize
+    for idx c in (string-slice stream initpos)
+        if (c == (char "\n"))
+            return (idx + 1)
+        if (not (whitespace? c))
+            err-malformed;
+    countof stream
+
 fn consume-whitespace (stream initpos)
     initpos as:= usize
     loop (idx = initpos)
@@ -54,22 +76,6 @@ fn consume-whitespace (stream initpos)
         # we want to return its position instead of the next (invalid) index.
         break (min idx (countof stream))
 
-# like consume-whitespace, but stops after a line break.
-fn consume-whitespace-endl (stream initpos)
-    initpos as:= usize
-    loop (idx = initpos)
-        c := stream @ idx
-        if (c == (char "\n"))
-            break (idx + 1)
-        if (whitespace? c)
-            repeat (idx + 1)
-        # we necessarily stop at the zero terminator at the most, in that case
-        # we want to return its position instead of the next (invalid) index.
-        break (min idx (countof stream))
-
-inline err-malformed ()
-    hide-traceback;
-    error "malformed input file"
 
 fn parse (filename)
     let source = (utils.read-file filename)
@@ -114,8 +120,11 @@ fn parse (filename)
                 err-malformed;
 
             # parse constant list
-            next-pos += 1
+            next-pos = (consume-whitespace source (next-pos + 1))
             for idx c in (string-slice source (deref next-pos))
+                # we use this variant to consume empty lines as well. Because of this,
+                # after we parse a constant we consume the trailing whitespace to avoid
+                # having more than one constant on the same line.
                 let skip = (consume-whitespace source idx)
                 if (skip > idx)
                     repeat skip
@@ -140,7 +149,7 @@ fn parse (filename)
                         # string ended
                         err-malformed;
 
-                    repeat (consume-whitespace-endl source stringlit-end)
+                    repeat (consume-trailing-whitespace source stringlit-end)
                 if (digit? c)
                     # TODO: this
         case 'CALL
