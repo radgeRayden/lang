@@ -2,6 +2,19 @@ import .utils
 using import String
 using import UTF-8
 
+inline string-slice (self start end)
+    """"Iterate on a slice of a String.
+    Generator
+        inline () (start as usize)
+        inline (i)
+            static-if (not (none? end))
+                i < end
+            else
+                i < self._count
+        inline (i)
+            _ i (self @ i)
+        inline (i) (i + 1:usize)
+
 inline whitespace? (c)
     switch c
     pass (char " ")
@@ -32,7 +45,7 @@ inline alphanum? (c)
         digit? c
 
 fn consume-whitespace (stream initpos)
-    imply initpos usize
+    initpos as:= usize
     loop (idx = initpos)
         c := stream @ idx
         if (whitespace? c)
@@ -43,7 +56,7 @@ fn consume-whitespace (stream initpos)
 
 # like consume-whitespace, but stops after a line break.
 fn consume-whitespace-endl (stream initpos)
-    imply initpos usize
+    initpos as:= usize
     loop (idx = initpos)
         c := stream @ idx
         if (c == (char "\n"))
@@ -61,23 +74,25 @@ inline err-malformed ()
 fn parse (filename)
     let source = (utils.read-file filename)
     let slen = (countof source)
-    loop (idx = 0:usize)
-        let idx = (consume-whitespace source idx)
-        if (idx >= slen)
-            break;
 
-        let c = (source @ idx)
+    inline advance (next)
+        repeat (next as i32) (next as usize)
+
+    for idx c in (enumerate source)
+        let skip = (consume-whitespace source idx)
+        if (skip > idx)
+            advance skip
 
         # skip comment line
         if (c == (char "#"))
-            repeat
+            advance
                 loop (idx = (idx + 1))
                     if (((source @ idx) == (char "\n")) or (idx >= (countof source)))
                         break idx
                     idx + 1
 
         # get instruction
-        local next-pos = idx
+        local next-pos : usize = idx
         local instruction : String
         loop ()
             let c = (source @ next-pos)
@@ -92,8 +107,6 @@ fn parse (filename)
 
         switch (bitcast (hash instruction) Symbol)
         case 'CONSTANTS
-            # while (whitespace? (source @ next-pos))
-            #     next-pos += 1
             next-pos = (consume-whitespace source (deref next-pos))
 
             c := source @ next-pos
@@ -102,36 +115,34 @@ fn parse (filename)
 
             # parse constant list
             next-pos += 1
-            loop (idx = (deref next-pos))
-                let idx = (consume-whitespace source idx)
-                if (idx >= slen)
-                    err-malformed;
+            for idx c in (string-slice source (deref next-pos))
+                let skip = (consume-whitespace source idx)
+                if (skip > idx)
+                    repeat skip
 
-                c := source @ idx
                 if (c == (char "}"))
                     next-pos = idx + 1
                     break;
                 # we expect either a string literal or a number.
                 if (c == (char "\""))
                     local stringlit : String
-                    let stringlit-end =
-                        loop (idx = (idx + 1))
-                            if (idx >= slen)
-                                err-malformed;
-                            c := source @ idx
+
+                    vvv bind stringlit-end
+                    label parse-stringlit
+                        for idx c in (string-slice source (idx + 1))
                             if (c == (char "\n"))
                                 err-malformed;
                             if (c == (char "\""))
                                 print stringlit
-                                break (idx + 1)
+                                merge parse-stringlit (idx + 1)
                             # TODO: refactor this out, because we also need to convert escapes like \n
                             'append stringlit c
-                            idx + 1
+                        # string ended
+                        err-malformed;
 
                     repeat (consume-whitespace-endl source stringlit-end)
                 if (digit? c)
                     # TODO: this
-                idx + 1
         case 'CALL
         case 'RETURN
         case 'CCALL
@@ -142,7 +153,8 @@ fn parse (filename)
         default
             ;
 
-        deref next-pos
+        if true
+            advance (deref next-pos)
 
 do
     let parse
