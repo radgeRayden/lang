@@ -148,18 +148,19 @@ fn parse (filename)
                 if (c == (char "\""))
                     local stringlit : String
 
-                    vvv bind stringlit-end
-                    label parse-stringlit
-                        for idx c in (string-slice source (idx + 1))
-                            if (c == (char "\n"))
-                                err-malformed;
-                            if (c == (char "\""))
-                                print stringlit
-                                merge parse-stringlit (idx + 1)
-                            # TODO: refactor this out, because we also need to convert escapes like \n
-                            'append stringlit c
-                        # string ended
-                        err-malformed;
+                    :: parse-str
+                    for idx c in (string-slice source (idx + 1))
+                        if (c == (char "\n"))
+                            err-malformed;
+                        if (c == (char "\""))
+                            print stringlit
+                            merge parse-str (idx + 1)
+                        # TODO: refactor this out, because we also need to convert escapes like \n
+                        'append stringlit c
+                    # string ended
+                    err-malformed;
+                    parse-str (stringlit-end) ::
+
 
                     repeat (consume-trailing-whitespace source stringlit-end)
                 if (digit? c)
