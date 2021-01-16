@@ -3,7 +3,8 @@ using import String
 using import UTF-8
 
 inline string-slice (self start end)
-    """"Iterate on a slice of a String.
+    """"Generator that sequentially iterates on a string from `start` to `end` (optional), returning
+        the index and character as loop variables.
     Generator
         inline () (start as usize)
         inline (i)
