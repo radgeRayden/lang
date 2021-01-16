@@ -76,6 +76,17 @@ fn consume-whitespace (stream initpos)
         # we want to return its position instead of the next (invalid) index.
         break (min idx (countof stream))
 
+fn parse-arg-int (stream initpos)
+    let initpos = (consume-leading-whitespace stream initpos)
+    if (not (digit? (stream @ initpos)))
+        err-malformed;
+    _
+        fold (value = 0) for idx c in (string-slice stream initpos)
+            if (not (digit? c))
+                return value idx
+            (value * 10) + (c - (char "0"))
+        # if we reach the end of the string
+        countof stream
 
 fn parse (filename)
     let source = (utils.read-file filename)
@@ -151,7 +162,10 @@ fn parse (filename)
 
                     repeat (consume-trailing-whitespace source stringlit-end)
                 if (digit? c)
-                    # TODO: this
+                    let val next = (parse-arg-int source idx)
+                    print val
+                    repeat (consume-trailing-whitespace source next)
+
         case 'CALL
         case 'RETURN
         case 'CCALL
