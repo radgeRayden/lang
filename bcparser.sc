@@ -110,30 +110,31 @@ fn parse (filename)
                     idx + 1
 
         # get instruction
-        local next-pos : usize = idx
         local instruction : String
-        loop ()
-            let c = (source @ next-pos)
+        :: parse-instruction
+        for idx c in (string-slice source idx)
             # capital letter?
             if ((c < 65:i8) or (c > 90:i8))
-                break;
+                merge parse-instruction idx
             'append instruction c
-            next-pos += 1
+        countof source
+        parse-instruction (idx) ::
 
         if ((countof instruction) == 0)
             err-malformed;
 
+        vvv bind next-pos
         switch (bitcast (hash instruction) Symbol)
         case 'CONSTANTS
-            next-pos = (consume-whitespace source (deref next-pos))
+            let idx = (consume-whitespace source idx)
 
-            c := source @ next-pos
+            c := source @ idx
             if (c != (char "{"))
                 err-malformed;
 
-            # parse constant list
-            next-pos = (consume-whitespace source (next-pos + 1))
-            for idx c in (string-slice source (deref next-pos))
+            :: parse-constants
+            let table-start = (consume-whitespace source (idx + 1))
+            for idx c in (string-slice source table-start)
                 # we use this variant to consume empty lines as well. Because of this,
                 # after we parse a constant we consume the trailing whitespace to avoid
                 # having more than one constant on the same line.
@@ -142,8 +143,7 @@ fn parse (filename)
                     repeat skip
 
                 if (c == (char "}"))
-                    next-pos = idx + 1
-                    break;
+                    merge parse-constants (idx + 1)
                 # we expect either a string literal or a number.
                 if (c == (char "\""))
                     local stringlit : String
@@ -161,25 +161,40 @@ fn parse (filename)
                     err-malformed;
                     parse-str (stringlit-end) ::
 
-
                     repeat (consume-trailing-whitespace source stringlit-end)
                 if (digit? c)
                     let val next = (parse-arg-int source idx)
                     print val
                     repeat (consume-trailing-whitespace source next)
 
+            # reached EOF without closing constants table
+            err-malformed;
+            parse-constants (idx) ::
         case 'CALL
+            let val next = (parse-arg-int source idx)
+            next
         case 'RETURN
+            consume-trailing-whitespace source idx
         case 'CCALL
+            let val next = (parse-arg-int source idx)
+            next
         case 'PUSH
+            let val next = (parse-arg-int source idx)
+            next
         case 'PUSHI
+            let val next = (parse-arg-int source idx)
+            next
         case 'POP
+            let val next = (parse-arg-int source idx)
+            next
         case 'DISCARD
+            let val next = (parse-arg-int source idx)
+            next
         default
-            ;
+            err-malformed;
 
-        if true
-            advance (deref next-pos)
+        if true (advance next-pos)
+
 
 do
     let parse
