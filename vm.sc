@@ -26,12 +26,14 @@ fn execute (program)
             let name = ('pop stack)
             assert (tag== name LangValue.String)
             let name = ('unsafe-extract-payload name String)
+
             local args : (Array LangValue)
             for i in (range argc)
-                'append args (copy ('pop stack))
+                'append args ('pop stack)
             try
-                # TODO: collect results
-                ('get program.functions name) args
+                local result = (('get program.functions name) args)
+                for i in (range (countof result))
+                    'append stack ('pop result)
             else
                 print name
                 error "unknown C function"

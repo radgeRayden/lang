@@ -29,6 +29,19 @@ do
         assert (tag== msg LangValue.String)
         C.stdio.printf "%s\n" (('unsafe-extract-payload msg String) as rawstring)
         ((Array LangValue))
+
+    fn tostring (args)
+        assert ((countof args) == 1)
+        let arg = ('pop args)
+        move args
+
+        local ret : (Array LangValue)
+        'append ret
+            LangValue.String
+                'apply arg
+                    inline (T val)
+                        String (tostring val)
+        ret
     locals;
 
 fn register (program)

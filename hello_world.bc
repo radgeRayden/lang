@@ -1,6 +1,9 @@
 CONSTANTS {
     "jello world"
     "print"
+    "tostring"
+    100
+    -100
 }
 
 # jello world
@@ -8,4 +11,10 @@ PUSH 0
 # print
 PUSH 1
 # print("jello world")
+CCALL 1
+# print(tostring(100))
+PUSH 3
+PUSH 2
+CCALL 1
+PUSH 1
 CCALL 1
