@@ -2,10 +2,20 @@ using import struct
 using import enum
 using import Array
 using import String
+using import Map
 
 enum LangValue
     String : String
     Number : f64
+
+let CWrapper =
+    typeof
+        static-typify
+            fn (args)
+                move args
+                ((Array LangValue))
+            (mutable (& (Array LangValue)))
+
 
 enum OpCode
     # call function at the top of stack with `argc` arguments starting at index 1
@@ -34,10 +44,12 @@ enum OpCode
 struct Program
     constant-table : (Array LangValue)
     code : (Array OpCode)
+    functions : (Map String CWrapper)
 
 do
     let
         LangValue
         OpCode
         Program
+        CWrapper
     locals;

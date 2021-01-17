@@ -198,9 +198,9 @@ fn parse (filename)
 
         if true (advance next-pos)
 
-    program
     for op in program.code
         print op
+    program
 
 do
     let parse

@@ -1,2 +1,4 @@
 import .bcparser
-bcparser.parse "hello_world.bc"
+import .vm
+local program = (bcparser.parse "hello_world.bc")
+vm.execute program
