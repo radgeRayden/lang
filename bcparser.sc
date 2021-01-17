@@ -1,6 +1,8 @@
-import .utils
 using import String
 using import UTF-8
+
+import .utils
+using import .program
 
 inline string-slice (self start end)
     """"Generator that sequentially iterates on a string from `start` to `end` (optional), returning
@@ -92,6 +94,7 @@ fn parse-arg-int (stream initpos)
 fn parse (filename)
     let source = (utils.read-file filename)
     let slen = (countof source)
+    local program : Program
 
     inline advance (next)
         repeat (next as i32) (next as usize)
@@ -153,7 +156,7 @@ fn parse (filename)
                         if (c == (char "\n"))
                             err-malformed;
                         if (c == (char "\""))
-                            print stringlit
+                            'append program.constant-table (LangValue.String stringlit)
                             merge parse-str (idx + 1)
                         # TODO: refactor this out, because we also need to convert escapes like \n
                         'append stringlit c
@@ -164,9 +167,8 @@ fn parse (filename)
                     repeat (consume-trailing-whitespace source stringlit-end)
                 if (digit? c)
                     let val next = (parse-arg-int source idx)
-                    print val
+                    'append program.constant-table (LangValue.Number (val as f64))
                     repeat (consume-trailing-whitespace source next)
-
             # reached EOF without closing constants table
             err-malformed;
             parse-constants (idx) ::
@@ -195,6 +197,7 @@ fn parse (filename)
 
         if true (advance next-pos)
 
+    program
 
 do
     let parse
