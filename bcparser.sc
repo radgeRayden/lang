@@ -99,6 +99,12 @@ fn parse (filename)
     inline advance (next)
         repeat (next as i32) (next as usize)
 
+    inline gen-instruction-int1 (ins startpos)
+        let arg next = (parse-arg-int source startpos)
+        'append program.code
+            (getattr OpCode ins) (typeinit arg)
+        next
+
     for idx c in (enumerate source)
         let skip = (consume-whitespace source idx)
         if (skip > idx)
@@ -173,31 +179,28 @@ fn parse (filename)
             err-malformed;
             parse-constants (idx) ::
         case 'CALL
-            let val next = (parse-arg-int source idx)
-            next
-        case 'RETURN
-            consume-trailing-whitespace source idx
+            gen-instruction-int1 'CALL idx
         case 'CCALL
-            let val next = (parse-arg-int source idx)
-            next
+            gen-instruction-int1 'CCALL idx
         case 'PUSH
-            let val next = (parse-arg-int source idx)
-            next
+            gen-instruction-int1 'PUSH idx
         case 'PUSHI
-            let val next = (parse-arg-int source idx)
-            next
+            gen-instruction-int1 'PUSHI idx
         case 'POP
-            let val next = (parse-arg-int source idx)
-            next
+            gen-instruction-int1 'POP idx
         case 'DISCARD
-            let val next = (parse-arg-int source idx)
-            next
+            gen-instruction-int1 'DISCARD idx
+        case 'RETURN
+            'append program.code (OpCode.RETURN)
+            consume-trailing-whitespace source idx
         default
             err-malformed;
 
         if true (advance next-pos)
 
     program
+    for op in program.code
+        print op
 
 do
     let parse

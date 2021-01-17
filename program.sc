@@ -23,6 +23,14 @@ enum OpCode
     # pop `argc` values from the stack and discard them
     DISCARD : (argc = u8)
 
+    inline __repr (self)
+        'apply self
+            inline (T args...)
+                va-lfold (tostring T.Name)
+                    inline (__ next computed)
+                        .. computed " " (tostring next)
+                    args...
+
 struct Program
     constant-table : (Array LangValue)
     code : (Array OpCode)
