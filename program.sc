@@ -6,7 +6,19 @@ using import Map
 
 enum LangValue
     String : String
-    Number : f64
+    Integer : i64
+    Real : f64
+
+    inline __repr (self)
+        'apply self
+            inline (T val)
+                ..
+                    static-if (T.Index == String)
+                        repr (tostring val)
+                    else
+                        tostring val
+                    default-styler 'style-operator ":"
+                    default-styler 'style-type (tostring T.Name)
 
 let CWrapper =
     typeof

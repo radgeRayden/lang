@@ -171,10 +171,18 @@ fn parse (filename)
                     parse-str (stringlit-end) ::
 
                     repeat (consume-trailing-whitespace source stringlit-end)
+                if (c == (char "-"))
+                    if (digit? (source @ (idx + 1)))
+                        let val next = (parse-arg-int source (idx + 1))
+                        'append program.constant-table (LangValue.Integer -val)
+                        repeat (consume-trailing-whitespace source next)
+                    else
+                        err-malformed;
                 if (digit? c)
                     let val next = (parse-arg-int source idx)
-                    'append program.constant-table (LangValue.Number (val as f64))
+                    'append program.constant-table (LangValue.Integer val)
                     repeat (consume-trailing-whitespace source next)
+
             # reached EOF without closing constants table
             err-malformed;
             parse-constants (idx) ::
@@ -198,8 +206,6 @@ fn parse (filename)
 
         if true (advance next-pos)
 
-    for op in program.code
-        print op
     program
 
 do
