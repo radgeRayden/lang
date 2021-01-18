@@ -91,6 +91,37 @@ fn parse-arg-int (stream initpos)
         # if we reach the end of the string
         countof stream
 
+spice parse-instruction (program name stream argstart)
+    let name = `(hash name)
+    let sw = (sc_switch_new name)
+
+    va-map
+        inline (ft)
+            let makeop-call = (sc_call_new `ft)
+            let next-pos =
+                va-lfold none
+                    inline (__ arg prev)
+                        let result =
+                            static-if (none? prev)
+                                `(parse-arg-int stream argstart)
+                            else
+                                `(parse-arg-int stream prev)
+                        sc_call_append_argument makeop-call `(typeinit (va@ 0 result))
+                        `(va@ 1 result)
+                    va-range 0 (countof ft.Type)
+            sc_switch_append_case sw `[(hash (tostring ft.Name))]
+                spice-quote
+                    'append program.code
+                        makeop-call
+                    next-pos or argstart
+
+        OpCode.__fields__
+    sc_switch_append_default sw
+        spice-quote
+            error (.. "unknown instruction: '" (tostring name) "' at position " (tostring argstart))
+    sw
+run-stage;
+
 fn parse (filename)
     let source = (utils.read-file filename)
     let slen = (countof source)
@@ -98,12 +129,6 @@ fn parse (filename)
 
     inline advance (next)
         repeat (next as i32) (next as usize)
-
-    inline gen-instruction-int1 (ins startpos)
-        let arg next = (parse-arg-int source startpos)
-        'append program.code
-            (getattr OpCode ins) (typeinit arg)
-        next
 
     for idx c in (enumerate source)
         let skip = (consume-whitespace source idx)
@@ -132,9 +157,7 @@ fn parse (filename)
         if ((countof instruction) == 0)
             err-malformed;
 
-        vvv bind next-pos
-        switch (bitcast (hash instruction) Symbol)
-        case 'CONSTANTS
+        if ((hash instruction) == (bitcast 'CONSTANTS hash))
             let idx = (consume-whitespace source idx)
 
             c := source @ idx
@@ -186,26 +209,9 @@ fn parse (filename)
             # reached EOF without closing constants table
             err-malformed;
             parse-constants (idx) ::
-        case 'CALL
-            'append program.code (OpCode.CALL)
-            consume-trailing-whitespace source idx
-        case 'CCALL
-            'append program.code (OpCode.CCALL)
-            consume-trailing-whitespace source idx
-        case 'PUSH
-            gen-instruction-int1 'PUSH idx
-        case 'PUSHI
-            gen-instruction-int1 'PUSHI idx
-        case 'POP
-            gen-instruction-int1 'POP idx
-        case 'DISCARD
-            gen-instruction-int1 'DISCARD idx
-        case 'RETURN
-            'append program.code (OpCode.RETURN)
-            consume-trailing-whitespace source idx
-        default
-            err-malformed;
+            advance idx
 
+        let next-pos = (parse-instruction program instruction source idx)
         if true (advance next-pos)
 
     program

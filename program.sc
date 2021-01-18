@@ -27,7 +27,7 @@ let CWrapper =
                 ;
             (mutable (& (Array LangValue)))
 
-
+let StackIndex = u32
 enum OpCode
     # call function at the top of stack
     CALL
@@ -38,11 +38,18 @@ enum OpCode
     # push value from constant value table onto the stack
     PUSH : (address = usize)
     # push value stored at stack position `index` onto the stack
-    PUSHI : (index = u32)
+    PUSHI : (index = StackIndex)
     # pop value from stack and store at target
-    POP : (target = u32)
+    POP : (target = StackIndex)
     # pop `argc` values from the stack and discard them
     DISCARD : (argc = u8)
+
+    # arithmetic instructions
+    ADD : (A = StackIndex) (B = StackIndex)
+    SUB : (A = StackIndex) (B = StackIndex)
+    MUL : (A = StackIndex) (B = StackIndex)
+    DIV : (A = StackIndex) (B = StackIndex)
+    NEG : (in = StackIndex)
 
     inline __repr (self)
         'apply self
