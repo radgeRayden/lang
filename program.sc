@@ -30,17 +30,17 @@ let CWrapper =
 
 enum OpCode
     # call function at the top of stack with `argc` arguments starting at index 1
-    CALL : (argc = u8)
+    CALL
     # jump back to address after call
     RETURN
     # call registered C function
-    CCALL : (argc = u8)
+    CCALL
     # push value from constant value table onto the stack
     PUSH : (address = usize)
     # push value stored at stack position `index` onto the stack
-    PUSHI : (index = u8)
+    PUSHI : (index = u32)
     # pop value from stack and store at target
-    POP : (target = u8)
+    POP : (target = u32)
     # pop `argc` values from the stack and discard them
     DISCARD : (argc = u8)
 
