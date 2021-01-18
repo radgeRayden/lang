@@ -50,6 +50,9 @@ enum OpCode
     DIV : (A = StackIndex) (B = StackIndex)
     NEG : (in = StackIndex)
 
+    # store acc register at index
+    STORE : (index = StackIndex)
+
     inline __repr (self)
         'apply self
             inline (T args...)

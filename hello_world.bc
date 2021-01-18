@@ -3,7 +3,11 @@ CONSTANTS {
     "print"
     "tostring"
     100
-    -100
+    2
+    2
+    25
+    5
+    3
 }
 
 # jello world
@@ -14,6 +18,30 @@ PUSH 1
 CCALL 1
 # print(tostring(100))
 PUSH 3
+PUSH 2
+CCALL 1
+PUSH 1
+CCALL 1
+
+# print(tostring ((2 + 2 - 25) * 5) / 3)
+PUSH 4
+PUSH 5
+ADD 0 1
+STORE 1
+DISCARD 1
+PUSH 6
+SUB 1 0
+STORE 1
+DISCARD 1
+PUSH 7
+MUL 1 0
+STORE 1
+DISCARD 1
+PUSH 8
+DIV 1 0
+STORE 1
+DISCARD 1
+# print
 PUSH 2
 CCALL 1
 PUSH 1
