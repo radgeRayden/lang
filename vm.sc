@@ -19,10 +19,9 @@ fn execute (program)
 
         dispatch op
         case CALL (argc)
-
             let f = ('pop stack)
             # ...
-        case CCALL ()
+        case CCALL (argc)
             let name = ('pop stack)
             assert (tag== name LangValue.String)
             let name = ('unsafe-extract-payload name String)
