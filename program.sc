@@ -29,7 +29,7 @@ let CWrapper =
 
 
 enum OpCode
-    # call function at the top of stack with `argc` arguments starting at index 1
+    # call function at the top of stack
     CALL
     # jump back to address after call
     RETURN
