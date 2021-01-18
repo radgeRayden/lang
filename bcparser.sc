@@ -198,13 +198,13 @@ fn parse (filename)
                 if (c == (char "-"))
                     if (digit? (source @ (idx + 1)))
                         let val next = (parse-arg-int source (idx + 1))
-                        'append program.constant-table (LangValue.Integer -val)
+                        'append program.constant-table (LangValue.Number (f64 -val))
                         repeat (consume-trailing-whitespace source next)
                     else
                         err-malformed;
                 if (digit? c)
                     let val next = (parse-arg-int source idx)
-                    'append program.constant-table (LangValue.Integer val)
+                    'append program.constant-table (LangValue.Number (f64 val))
                     repeat (consume-trailing-whitespace source next)
 
             # reached EOF without closing constants table

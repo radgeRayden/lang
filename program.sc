@@ -6,8 +6,7 @@ using import Map
 
 enum LangValue
     String : String
-    Integer : i64
-    Real : f64
+    Number : f64
 
     inline __repr (self)
         'apply self
