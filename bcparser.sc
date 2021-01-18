@@ -91,7 +91,7 @@ fn parse-arg-int (stream initpos)
         # if we reach the end of the string
         countof stream
 
-spice parse-instruction (program name stream argstart)
+spice append-instruction-with-args (program name stream argstart)
     let sw = (sc_switch_new `(hash name))
 
     va-map
@@ -146,14 +146,14 @@ fn parse (filename)
 
         # get instruction
         local instruction : String
-        :: parse-instruction
+        :: instruction-name
         for idx c in (string-slice source idx)
             # capital letter?
             if ((c < 65:i8) or (c > 90:i8))
-                merge parse-instruction idx
+                merge instruction-name idx
             'append instruction c
         countof source
-        parse-instruction (idx) ::
+        instruction-name (idx) ::
 
         if ((countof instruction) == 0)
             err-malformed;
@@ -212,7 +212,7 @@ fn parse (filename)
             parse-constants (idx) ::
             advance idx
 
-        let next-pos = (parse-instruction program instruction source idx)
+        let next-pos = (append-instruction-with-args program instruction source idx)
         if true (advance next-pos)
 
     program
