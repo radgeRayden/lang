@@ -7,6 +7,7 @@ using import Map
 enum LangValue
     String : String
     Number : f64
+    Nil
 
     inline __repr (self)
         'apply self
@@ -40,8 +41,12 @@ enum OpCode
     PUSHI : (index = StackIndex)
     # pop value from stack and store at target
     POP : (target = StackIndex)
+    # copy stack entry A onto stack entry B
+    COPY : (A = StackIndex) (B = StackIndex)
     # pop `argc` values from the stack and discard them
     DISCARD : (argc = u8)
+    # make space for local variables
+    ALLOCA : u32
 
     # arithmetic instructions
     ADD : (A = StackIndex) (B = StackIndex)
