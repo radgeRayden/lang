@@ -22,18 +22,13 @@ fn execute (program)
 
             let f = ('pop stack)
             # ...
-        case CCALL (argc)
+        case CCALL ()
             let name = ('pop stack)
             assert (tag== name LangValue.String)
             let name = ('unsafe-extract-payload name String)
 
-            local args : (Array LangValue)
-            for i in (range argc)
-                'append args ('pop stack)
             try
-                local result = (('get program.functions name) args)
-                for i in (range (countof result))
-                    'append stack ('pop result)
+                ('get program.functions name) stack
             else
                 print name
                 error "unknown C function"

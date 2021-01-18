@@ -11,10 +11,10 @@ PUSH 0
 # print
 PUSH 1
 # print("jello world")
-CCALL 1
+CCALL
 # print(tostring(100))
 PUSH 3
 PUSH 2
-CCALL 1
+CCALL
 PUSH 1
-CCALL 1
+CCALL

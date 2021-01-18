@@ -23,9 +23,8 @@ enum LangValue
 let CWrapper =
     typeof
         static-typify
-            fn (args)
-                move args
-                ((Array LangValue))
+            fn (stack)
+                ;
             (mutable (& (Array LangValue)))
 
 

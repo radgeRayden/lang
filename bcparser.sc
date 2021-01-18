@@ -187,9 +187,11 @@ fn parse (filename)
             err-malformed;
             parse-constants (idx) ::
         case 'CALL
-            gen-instruction-int1 'CALL idx
+            'append program.code (OpCode.CALL)
+            consume-trailing-whitespace source idx
         case 'CCALL
-            gen-instruction-int1 'CCALL idx
+            'append program.code (OpCode.CCALL)
+            consume-trailing-whitespace source idx
         case 'PUSH
             gen-instruction-int1 'PUSH idx
         case 'PUSHI
