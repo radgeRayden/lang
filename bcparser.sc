@@ -92,8 +92,7 @@ fn parse-arg-int (stream initpos)
         countof stream
 
 spice parse-instruction (program name stream argstart)
-    let name = `(hash name)
-    let sw = (sc_switch_new name)
+    let sw = (sc_switch_new `(hash name))
 
     va-map
         inline (ft)
@@ -118,7 +117,9 @@ spice parse-instruction (program name stream argstart)
         OpCode.__fields__
     sc_switch_append_default sw
         spice-quote
-            error (.. "unknown instruction: '" (tostring name) "' at position " (tostring argstart))
+            error
+                .. "unknown instruction: '" (tostring name) "' at position "
+                    (tostring (argstart - (countof name)))
     sw
 run-stage;
 
