@@ -29,6 +29,8 @@ let CWrapper =
 
 let StackIndex = u32
 enum OpCode
+    # unconditionally jump to address
+    JUMP : (address = usize)
     # call function at the top of stack
     CALL : (argc = u8)
     # jump back to address after call

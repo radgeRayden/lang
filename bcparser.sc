@@ -1,5 +1,6 @@
 using import String
 using import UTF-8
+using import Map
 
 import .utils
 using import .program
@@ -28,14 +29,17 @@ inline whitespace? (c)
     default
         false
 
+inline uppercase-letter? (c)
+    and
+        c >= (char "A")
+        c <= (char "Z")
+
+inline lowercase-letter? (c)
+    and
+        c >= (char "a")
+        c <= (char "z")
 inline letter? (c)
-    or
-        and
-            c >= (char "A")
-            c <= (char "Z")
-        and
-            c >= (char "a")
-            c <= (char "z")
+    or (uppercase-letter? c) (lowercase-letter? c)
 
 inline digit? (c)
     and
@@ -127,6 +131,7 @@ fn parse (filename)
     let source = (utils.read-file filename)
     let slen = (countof source)
     local program : Program
+    local labels : (Map String usize)
 
     inline advance (next)
         repeat (next as i32) (next as usize)
@@ -148,8 +153,7 @@ fn parse (filename)
         local instruction : String
         :: instruction-name
         for idx c in (string-slice source idx)
-            # capital letter?
-            if ((c < 65:i8) or (c > 90:i8))
+            if (not (uppercase-letter? c))
                 merge instruction-name idx
             'append instruction c
         countof source
@@ -158,7 +162,9 @@ fn parse (filename)
         if ((countof instruction) == 0)
             err-malformed;
 
-        if ((hash instruction) == (bitcast 'CONSTANTS hash))
+        print instruction
+        switch (bitcast (hash instruction) Symbol)
+        case 'CONSTANTS
             let idx = (consume-whitespace source idx)
 
             c := source @ idx
@@ -211,9 +217,59 @@ fn parse (filename)
             err-malformed;
             parse-constants (idx) ::
             advance idx
+        case 'LABEL
+            let next = (consume-leading-whitespace source idx)
+            local new-label : String
 
+            :: parse-label
+            for idx c in (string-slice source next)
+                if (uppercase-letter? c)
+                    'append new-label c
+                else
+                    merge parse-label idx
+            countof source
+            parse-label (next) ::
+
+            if ((countof new-label) == 0)
+                # not a label name!
+                err-malformed;
+            print (repr (tostring new-label))
+            'set labels (deref new-label) (countof program.code)
+            advance (consume-trailing-whitespace source next)
+        case 'JUMP
+            let next val =
+                try
+                    parse-arg-int source idx
+                else
+                    let next = (consume-leading-whitespace source idx)
+                    local jump-label : String
+                    :: parse-label
+                    for idx c in (string-slice source next)
+                        if (uppercase-letter? c)
+                            'append jump-label c
+                        else
+                            merge parse-label idx
+                    countof source
+                    parse-label (next) ::
+                    if ((countof jump-label) == 0)
+                        # not a label name!
+                        err-malformed;
+                    let address =
+                        try
+                            print (repr (tostring jump-label))
+                            let addr = ('get labels jump-label)
+                            print addr
+                            addr
+                        else (err-malformed)
+                    _ (next as i32) (deref address)
+            'append program.code (OpCode.JUMP val)
+            advance (consume-trailing-whitespace source next)
+        default
+            ;
+            # all special cases are handled, now free to parse real opcodes
         let next-pos = (append-instruction-with-args program instruction source idx)
-        if true (advance next-pos)
+        if true
+            advance next-pos
 
     program
 

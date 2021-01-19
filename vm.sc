@@ -27,9 +27,12 @@ fn execute (program)
     print "--- EXECUTION STARTS HERE ---"
     for idx op in (enumerate program.code)
         inline jump (idx)
-            repeat idx idx
+            let idx = (copy idx)
+            repeat (idx as i32) (idx as usize)
 
         dispatch op
+        case JUMP (address)
+            jump address
         case CALL (argc)
             let f = ('pop stack)
             # ...
