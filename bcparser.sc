@@ -160,11 +160,24 @@ fn parse (filename)
     let slen = (countof source)
     local program : Program
     local labels : (Map String usize)
-    #  jumps where we couldn't yet resolve their labels
-    local unknown-jumps : (Array UnknownJumpReference)
 
     inline advance (next)
         repeat (next as i32) (next as usize)
+
+    #  jumps where we couldn't yet resolve their labels
+    local unknown-jumps : (Array UnknownJumpReference)
+    inline append-jump-save-label (kind idx)
+        let next val =
+            try (parse-arg-int source idx)
+            else
+                let jump-label next = (parse-identifier source idx)
+                'append unknown-jumps
+                    UnknownJumpReference
+                        address = (countof program.code)
+                        label-name = jump-label
+                _ (next as i32) 0:usize
+        'append program.code ((getattr OpCode kind) val)
+        advance (consume-trailing-whitespace source next)
 
     for idx c in (enumerate source)
         let skip = (consume-whitespace source idx)
@@ -241,19 +254,11 @@ fn parse (filename)
             'set labels (deref new-label) (countof program.code)
             advance (consume-trailing-whitespace source next)
         case 'JUMP
-            let next val =
-                try
-                    parse-arg-int source idx
-                else
-                    let jump-label next = (parse-identifier source idx)
-                    'append unknown-jumps
-                        UnknownJumpReference
-                            address = (countof program.code)
-                            label-name = jump-label
-                    # we're gonna link jumps to labels at the end, so just set it to zero;
-                    _ (next as i32) 0:usize
-            'append program.code (OpCode.JUMP val)
-            advance (consume-trailing-whitespace source next)
+            append-jump-save-label 'JUMP idx
+        case 'JUMP_T
+            append-jump-save-label 'JUMP_T idx
+        case 'JUMP_F
+            append-jump-save-label 'JUMP_F idx
         default
             ;
         # all special cases are handled, now free to parse real opcodes
@@ -264,11 +269,19 @@ fn parse (filename)
     # link jumps to labels
     for jmp in unknown-jumps
         let opcode = (program.code @ jmp.address)
-        assert (('literal opcode) == OpCode.JUMP.Literal)
         let label-addr =
             try ('get labels jmp.label-name)
             else (error (.. "unknown label: " (tostring jmp.label-name)))
-        opcode = (OpCode.JUMP label-addr)
+        dispatch opcode
+        case JUMP (address)
+            opcode = (OpCode.JUMP label-addr)
+        case JUMP_T (address)
+            opcode = (OpCode.JUMP_T label-addr)
+        case JUMP_F (address)
+            opcode = (OpCode.JUMP_F label-addr)
+        default
+            assert false
+            unreachable;
     program
 
 do

@@ -1,0 +1,29 @@
+CONSTANTS {
+    0
+    10
+    1
+    "print"
+    "tostring"
+}
+
+# local i, max, step = 0, 10, 1
+PUSH 0
+PUSH 1
+PUSH 2
+# for (i = 0; i < 10; ++i)
+LABEL FOR_LOOP
+# if !(i < max)
+TEST_LT 2 1
+# could have used not instead, but we're too smart.
+JUMP_F END_LOOP
+# print(tostring(i))
+PUSHI 2
+PUSH 4
+CCALL 1
+PUSH 3
+CCALL 1
+
+ADD 2 0
+STORE 2
+JUMP FOR_LOOP
+LABEL END_LOOP

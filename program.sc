@@ -7,7 +7,17 @@ using import Map
 enum LangValue
     String : String
     Number : f64
+    Boolean : bool
     Nil
+
+    inline true? (self)
+        dispatch self
+        case Nil ()
+            false
+        case Boolean (val)
+            deref val
+        default
+            true
 
     inline __repr (self)
         'apply self
@@ -29,8 +39,6 @@ let CWrapper =
 
 let StackIndex = u32
 enum OpCode
-    # unconditionally jump to address
-    JUMP : (address = usize)
     # call function at the top of stack
     CALL : (argc = u8)
     # jump back to address after call
@@ -59,6 +67,27 @@ enum OpCode
 
     # store acc register at index
     STORE : (index = StackIndex)
+
+    # control flow
+    # unconditionally jump to address
+    JUMP : (address = usize)
+    # push (A == B)
+    TEST_EQ : (A = StackIndex) (B = StackIndex)
+    # push (A != B)
+    TEST_NEQ : (A = StackIndex) (B = StackIndex)
+    # push (A > B)
+    TEST_GT : (A = StackIndex) (B = StackIndex)
+    # push (A < B)
+    TEST_LT : (A = StackIndex) (B = StackIndex)
+    # jump if stack top is true
+    JUMP_T : (address = usize)
+    # jump if stack top is false
+    JUMP_F : (address = usize)
+
+    # logical operators
+    NOT : (arg = StackIndex)
+    AND : (A = StackIndex) (B = StackIndex)
+    OR : (A = StackIndex) (B = StackIndex)
 
     inline __repr (self)
         'apply self
