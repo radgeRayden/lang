@@ -26,8 +26,8 @@ fn execute (program)
             stack @ (calc-index a)
             stack @ (calc-index b)
         op
-            'true? a
-            'true? b
+            imply a bool
+            imply b bool
 
     stdlib.register program
 
@@ -78,11 +78,11 @@ fn execute (program)
             jump address
         case JUMP_T (address)
             let tval = ('pop stack)
-            if ('true? tval)
+            if tval
                 jump address
         case JUMP_F (address)
             let tval = ('pop stack)
-            if (not ('true? tval))
+            if (not tval)
                 jump address
 
         # comparisons
@@ -111,7 +111,7 @@ fn execute (program)
         case NOT (arg)
             'append stack
                 LangValue.Boolean
-                    not ('true? (stack @ (calc-index arg)))
+                    not (stack @ (calc-index arg))
         case AND (A B)
             'append stack
                 LangValue.Boolean

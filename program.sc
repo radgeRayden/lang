@@ -10,7 +10,7 @@ enum LangValue
     Boolean : bool
     Nil
 
-    inline true? (self)
+    inline __tobool (self)
         dispatch self
         case Nil ()
             false
