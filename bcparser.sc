@@ -1,6 +1,8 @@
 using import String
 using import UTF-8
 using import Map
+using import Array
+using import struct
 
 import .utils
 using import .program
@@ -95,6 +97,8 @@ fn parse-arg-int (stream initpos)
         # if we reach the end of the string
         countof stream
 
+fn parse-arg-real (stream initpos)
+
 spice append-instruction-with-args (program name stream argstart)
     let sw = (sc_switch_new `(hash name))
 
@@ -127,11 +131,17 @@ spice append-instruction-with-args (program name stream argstart)
     sw
 run-stage;
 
+struct UnknownJumpReference
+    address : usize
+    label-name : String
+
 fn parse (filename)
     let source = (utils.read-file filename)
     let slen = (countof source)
     local program : Program
     local labels : (Map String usize)
+    #  jumps where we couldn't yet resolve their labels
+    local unknown-jumps : (Array UnknownJumpReference)
 
     inline advance (next)
         repeat (next as i32) (next as usize)
@@ -162,7 +172,6 @@ fn parse (filename)
         if ((countof instruction) == 0)
             err-malformed;
 
-        print instruction
         switch (bitcast (hash instruction) Symbol)
         case 'CONSTANTS
             let idx = (consume-whitespace source idx)
@@ -233,7 +242,6 @@ fn parse (filename)
             if ((countof new-label) == 0)
                 # not a label name!
                 err-malformed;
-            print (repr (tostring new-label))
             'set labels (deref new-label) (countof program.code)
             advance (consume-trailing-whitespace source next)
         case 'JUMP
@@ -254,14 +262,12 @@ fn parse (filename)
                     if ((countof jump-label) == 0)
                         # not a label name!
                         err-malformed;
-                    let address =
-                        try
-                            print (repr (tostring jump-label))
-                            let addr = ('get labels jump-label)
-                            print addr
-                            addr
-                        else (err-malformed)
-                    _ (next as i32) (deref address)
+                    'append unknown-jumps
+                        UnknownJumpReference
+                            address = (countof program.code)
+                            label-name = jump-label
+                    # we're gonna link jumps to labels at the end, so just set it to zero;
+                    _ (next as i32) 0:usize
             'append program.code (OpCode.JUMP val)
             advance (consume-trailing-whitespace source next)
         default
@@ -271,6 +277,14 @@ fn parse (filename)
         if true
             advance next-pos
 
+    # link jumps to labels
+    for jmp in unknown-jumps
+        let opcode = (program.code @ jmp.address)
+        assert (('literal opcode) == OpCode.JUMP.Literal)
+        let label-addr =
+            try ('get labels jmp.label-name)
+            else (error (.. "unknown label: " (tostring jmp.label-name)))
+        opcode = (OpCode.JUMP label-addr)
     program
 
 do

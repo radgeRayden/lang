@@ -10,6 +10,11 @@ CONSTANTS {
     3
 }
 
+JUMP START
+# START SUM3 --
+
+# -- END FUNCTION --
+
 # jello world
 PUSH 0
 # print
@@ -23,6 +28,7 @@ CCALL 1
 PUSH 1
 CCALL 1
 
+LABEL START
 # print(tostring ((2 + 2 - 25) * 5) / 3)
 PUSH 4
 PUSH 5
@@ -46,3 +52,4 @@ PUSH 2
 CCALL 1
 PUSH 1
 CCALL 1
+
