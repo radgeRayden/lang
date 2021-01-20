@@ -106,7 +106,7 @@ fn parse-identifier (stream initpos)
 
     :: parse-identifier
     for idx c in (string-slice stream next)
-        if (uppercase-letter? c)
+        if ((uppercase-letter? c) or (c == (char "_")))
             'append identifier c
         else
             merge parse-identifier idx
