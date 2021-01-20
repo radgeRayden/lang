@@ -2,10 +2,9 @@ using import Array
 using import Map
 using import String
 using import .program
+import .utils
 import .stdlib
 
-inline tag== (ev eT)
-    ('literal ev) == eT.Literal
 
 fn execute (program)
     local stack : (Array LangValue)
@@ -19,8 +18,8 @@ fn execute (program)
             stack @ (calc-index a)
             stack @ (calc-index b)
         op
-            'unsafe-extract-payload a f64
-            'unsafe-extract-payload b f64
+            utils.extract-as-tag a 'Number
+            utils.extract-as-tag b 'Number
 
     stdlib.register program
 
@@ -37,10 +36,7 @@ fn execute (program)
             let f = ('pop stack)
             # ...
         case CCALL (argc)
-            let name = ('pop stack)
-            assert (tag== name LangValue.String)
-            let name = ('unsafe-extract-payload name String)
-
+            let name = (utils.extract-as-tag ('pop stack) 'String)
             try
                 ('get program.functions name) stack
             else

@@ -1,6 +1,7 @@
 using import String
 using import Array
 using import .program
+import .utils
 
 spice register-scope (scope program)
     scope as:= Scope
@@ -15,17 +16,13 @@ spice register-scope (scope program)
 
 run-stage;
 
-inline tag== (ev eT)
-    ('literal ev) == eT.Literal
-
 let C = (import .radlib.libc)
 
 vvv bind global-scope
 do
     fn print (stack)
         let msg = ('pop stack)
-        assert (tag== msg LangValue.String)
-        C.stdio.printf "%s\n" (('unsafe-extract-payload msg String) as rawstring)
+        C.stdio.printf "%s\n" ((utils.extract-as-tag msg 'String) as rawstring)
         ;
 
     fn tostring (stack)
