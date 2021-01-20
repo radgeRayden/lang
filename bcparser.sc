@@ -40,6 +40,7 @@ inline lowercase-letter? (c)
     and
         c >= (char "a")
         c <= (char "z")
+
 inline letter? (c)
     or (uppercase-letter? c) (lowercase-letter? c)
 
@@ -53,9 +54,9 @@ inline alphanum? (c)
         letter? c
         digit? c
 
-inline err-malformed ()
+inline err-malformed (idx)
     hide-traceback;
-    error "malformed input file"
+    error ("malformed input file, failed at " .. (tostring idx))
 
 fn consume-leading-whitespace (stream initpos)
     initpos as:= usize
@@ -72,7 +73,7 @@ fn consume-trailing-whitespace (stream initpos)
         if (c == (char "\n"))
             return (idx + 1)
         if (not (whitespace? c))
-            err-malformed;
+            err-malformed idx
     countof stream
 
 fn consume-whitespace (stream initpos)
@@ -98,6 +99,25 @@ fn parse-arg-int (stream initpos)
         countof stream
 
 fn parse-arg-real (stream initpos)
+
+fn parse-identifier (stream initpos)
+    let next = (consume-leading-whitespace stream initpos)
+    local identifier : String
+
+    :: parse-identifier
+    for idx c in (string-slice stream next)
+        if (uppercase-letter? c)
+            'append identifier c
+        else
+            merge parse-identifier idx
+    countof stream
+    parse-identifier (next) ::
+
+    if ((countof identifier) == 0)
+        # not a label name!
+        err-malformed;
+
+    _ identifier next
 
 spice append-instruction-with-args (program name stream argstart)
     let sw = (sc_switch_new `(hash name))
@@ -160,17 +180,7 @@ fn parse (filename)
                     idx + 1
 
         # get instruction
-        local instruction : String
-        :: instruction-name
-        for idx c in (string-slice source idx)
-            if (not (uppercase-letter? c))
-                merge instruction-name idx
-            'append instruction c
-        countof source
-        instruction-name (idx) ::
-
-        if ((countof instruction) == 0)
-            err-malformed;
+        let instruction idx = (parse-identifier source idx)
 
         switch (bitcast (hash instruction) Symbol)
         case 'CONSTANTS
@@ -227,21 +237,7 @@ fn parse (filename)
             parse-constants (idx) ::
             advance idx
         case 'LABEL
-            let next = (consume-leading-whitespace source idx)
-            local new-label : String
-
-            :: parse-label
-            for idx c in (string-slice source next)
-                if (uppercase-letter? c)
-                    'append new-label c
-                else
-                    merge parse-label idx
-            countof source
-            parse-label (next) ::
-
-            if ((countof new-label) == 0)
-                # not a label name!
-                err-malformed;
+            let new-label next = (parse-identifier source idx)
             'set labels (deref new-label) (countof program.code)
             advance (consume-trailing-whitespace source next)
         case 'JUMP
@@ -249,19 +245,7 @@ fn parse (filename)
                 try
                     parse-arg-int source idx
                 else
-                    let next = (consume-leading-whitespace source idx)
-                    local jump-label : String
-                    :: parse-label
-                    for idx c in (string-slice source next)
-                        if (uppercase-letter? c)
-                            'append jump-label c
-                        else
-                            merge parse-label idx
-                    countof source
-                    parse-label (next) ::
-                    if ((countof jump-label) == 0)
-                        # not a label name!
-                        err-malformed;
+                    let jump-label next = (parse-identifier source idx)
                     'append unknown-jumps
                         UnknownJumpReference
                             address = (countof program.code)
@@ -272,7 +256,7 @@ fn parse (filename)
             advance (consume-trailing-whitespace source next)
         default
             ;
-            # all special cases are handled, now free to parse real opcodes
+        # all special cases are handled, now free to parse real opcodes
         let next-pos = (append-instruction-with-args program instruction source idx)
         if true
             advance next-pos
