@@ -7,10 +7,14 @@ import .utils
 import .stdlib
 
 fn step (vm)
-    let stack acc program =
+    let stack program =
         vm.stack
-        vm.acc
         vm.program
+
+    let reg = vm.registers
+    let acc pc =
+        reg.acc
+        reg.pc
 
     inline calc-index (i)
         (countof stack) - 1 - i
@@ -32,7 +36,7 @@ fn step (vm)
             imply b bool
 
     inline jump (idx)
-        vm.pc = idx
+        pc = idx
 
     dispatch ('fetch vm)
     case CALL (argc)
@@ -121,11 +125,14 @@ fn step (vm)
     default
         error "unsupported opcode"
 
+struct Registers
+    acc : f64
+    pc : usize
+
 struct VM
-    program : Program
-    stack   : (Array LangValue)
-    acc     : f64
-    pc      : usize
+    program   : Program
+    stack     : (Array LangValue)
+    registers : Registers
 
     inline __typecall (cls program)
         local program = program
@@ -134,11 +141,11 @@ struct VM
             program = program
 
     inline done? (self)
-        self.pc >= (countof self.program.code)
+        self.registers.pc >= (countof self.program.code)
 
     inline fetch (self)
-        op := self.program.code @ self.pc
-        self.pc += 1
+        op := self.program.code @ self.registers.pc
+        self.registers.pc += 1
         op
 
     let step
