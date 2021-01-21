@@ -4,10 +4,32 @@ using import Array
 using import String
 using import Map
 
+typedef FunctionBase < Struct
+    inline __copy (self)
+        this-type
+            unpack (storagecast self)
+
+    inline __== (lhsT rhsT)
+        static-if (lhsT == rhsT)
+            inline (a b)
+                a.address == b.address
+        else
+            inline (...)
+                false
+
+struct LangFunction < FunctionBase
+    address : usize
+    argc : u8
+    retc : u8
+
+type NativeFunction < FunctionBase :: (storageof LangFunction)
+
 enum LangValue
     String : String
     Number : f64
     Boolean : bool
+    Function : LangFunction
+    NativeFunction : NativeFunction
     Nil
 
     inline __tobool (self)
