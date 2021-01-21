@@ -5,7 +5,7 @@ using import Array
 using import struct
 
 import .utils
-using import .program
+using import .common
 
 inline string-slice (self start end)
     """"Generator that sequentially iterates on a string from `start` to `end` (optional), returning

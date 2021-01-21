@@ -2,7 +2,7 @@ using import Array
 using import Map
 using import String
 using import struct
-using import .program
+using import .common
 import .utils
 import .stdlib
 

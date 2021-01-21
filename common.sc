@@ -6,7 +6,7 @@ using import Map
 
 typedef FunctionBase < Struct
     inline __copy (self)
-        this-type
+        (typeof self)
             unpack (storagecast self)
 
     inline __== (lhsT rhsT)

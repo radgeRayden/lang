@@ -1,6 +1,6 @@
 using import String
 using import Array
-using import .program
+using import .common
 import .utils
 
 spice register-scope (scope program)
