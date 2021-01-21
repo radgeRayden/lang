@@ -1,0 +1,39 @@
+CONSTANTS {
+    0
+    1
+    "print"
+    "tostring"
+}
+
+# local zero, one = 0, 1
+PUSH 0
+PUSH 1
+
+# local a = (zero == one) -> false
+TEST_EQ 0 1
+# local b = (not a) -> true
+NOT 0
+# local c = (b or a) -> true
+OR 0 1
+# local d = (b and a) -> false
+AND 1 2
+
+PUSH 3
+CCALL 1
+PUSH 2
+CCALL 1
+
+PUSH 3
+CCALL 1
+PUSH 2
+CCALL 1
+
+PUSH 3
+CCALL 1
+PUSH 2
+CCALL 1
+
+PUSH 3
+CCALL 1
+PUSH 2
+CCALL 1
