@@ -13,6 +13,7 @@ fn read-file (filename)
 
         'resize buf (flen as usize)
         fread buf._items 1 (flen as u64) fhandle
+        buf._items @ flen = 0:i8
         fclose fhandle
     buf
 
