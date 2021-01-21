@@ -1,14 +1,27 @@
 using import Array
 using import Map
 using import String
+using import struct
 using import .program
 import .utils
 import .stdlib
 
+struct VM
+    stack : (Array LangValue)
+    program : Program
+    acc : f64
 
-fn execute (program)
-    local stack : (Array LangValue)
-    local acc : f64
+    inline __typecall (cls program)
+        local program = program
+        stdlib.register program
+        super-type.__typecall cls
+            program = program
+
+fn execute (vm)
+    let stack acc program =
+        vm.stack
+        vm.acc
+        vm.program
 
     inline calc-index (i)
         (countof stack) - 1 - i
@@ -28,8 +41,6 @@ fn execute (program)
         op
             imply a bool
             imply b bool
-
-    stdlib.register program
 
     print "--- EXECUTION STARTS HERE ---"
     for idx op in (enumerate program.code)
@@ -125,5 +136,5 @@ fn execute (program)
             error "unsupported opcode"
 
 do
-    let execute
+    let execute VM
     locals;

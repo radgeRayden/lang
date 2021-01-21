@@ -1,6 +1,14 @@
+using import String
+
 import .bcparser
 import .vm
-local program = (bcparser.parse "tests/hello_world.bc")
-vm.execute program
-local program = (bcparser.parse "tests/control_flow.bc")
-vm.execute program
+
+local tests =
+    arrayof String
+        "hello_world.bc"
+        "control_flow.bc"
+
+for tst in tests
+    path := (String "tests/") .. tst
+    local machine = (vm.VM (bcparser.parse path))
+    vm.execute machine
